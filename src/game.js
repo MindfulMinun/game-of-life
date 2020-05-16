@@ -35,6 +35,10 @@ export class Grid {
         this.candidates = new Set()
     }
 
+    /**
+     * Calculates the next generation given the grid's current state
+     * @returns {Grid} The next generation.
+     */
     nextFrame() {
         const next = new Grid(this)
         const actualCandidates = [...this.candidates.values()]

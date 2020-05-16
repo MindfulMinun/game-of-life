@@ -1,28 +1,33 @@
 {
-  "name": "game-of-life",
-  "version": "0.1.0",
-  "description": "JavaScript implementation of Conway's Game of Life",
-  "main": "dist/index.js",
-  "author": "MindfulMinun <importantmails4bc@gmail.com> (https://benjic.xyz)",
-  "contributors": [],
-  "homepage": "https://github.com/MindfulMinun/game-of-life",
-  "repository": "github:MindfulMinun/game-of-life",
-  "license": "MIT",
-  "private": true,
-  "scripts": {
-    "build": "rm -rf dist && babel src -d dist",
-    "watch": "nodemon --watch src --exec 'npm run build'",
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "engines": {
-    "node": ">=8.0.0 <11.0.0"
-  },
-  "devDependencies": {
-    "http-server": "^0.12.3",
-    "webpack": "^4.43.0",
-    "webpack-cli": "^3.3.11"
-  },
-  "dependencies": {
-    "pad-start": "^1.0.2"
-  }
+    "name": "game-of-life",
+    "version": "0.1.0",
+    "description": "JavaScript implementation of Conway's Game of Life",
+    "main": "dist/game.js",
+    "types": "dist/game.d.ts",
+    "author": "MindfulMinun <importantmails4bc@gmail.com> (https://benjic.xyz)",
+    "contributors": [],
+    "homepage": "https://github.com/MindfulMinun/game-of-life",
+    "repository": "github:MindfulMinun/game-of-life",
+    "license": "MIT",
+    "private": true,
+    "scripts": {
+        "build": "rm -rf dist && npm run declaration:build && ./node_modules/.bin/babel src -d dist",
+        "declaration:build": "npx tsc",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "engines": {
+        "node": ">=8.0.0 <11.0.0"
+    },
+    "devDependencies": {
+        "@babel/cli": "^7.8.4",
+        "@babel/core": "^7.9.6",
+        "@babel/preset-env": "^7.9.6",
+        "http-server": "^0.12.3",
+        "typescript": "^3.9.2",
+        "webpack": "^4.43.0",
+        "webpack-cli": "^3.3.11"
+    },
+    "dependencies": {
+        "pad-start": "^1.0.2"
+    }
 }
