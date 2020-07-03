@@ -94,14 +94,14 @@ function draw() {
     // Draw cursor
     const rect = canv.getBoundingClientRect()
     if (!shouldUpdate && lastMouseEvent) {
-        const x = Math.floor((lastMouseEvent.clientX - rect.x) / scaleFactor * dpr)
-        const y = Math.floor((lastMouseEvent.clientY - rect.y) / scaleFactor * dpr)
+        const x = Math.floor((lastMouseEvent.clientX - rect.x)) / rect.width * game.width
+        const y = Math.floor((lastMouseEvent.clientY - rect.y)) / rect.height * game.height
         ctx.fillStyle = 'yellow'
         ctx.fillRect(x, y, 1, 1)
     }
     if (!shouldUpdate && lastClick) {
-        const x = Math.floor((lastMouseEvent.clientX - rect.x) / scaleFactor * dpr)
-        const y = Math.floor((lastMouseEvent.clientY - rect.y) / scaleFactor * dpr)
+        const x = Math.floor((lastMouseEvent.clientX - rect.x)) / rect.width * game.width
+        const y = Math.floor((lastMouseEvent.clientY - rect.y)) / rect.height * game.height
         game.setState(x, y, !game.getState(x, y))
         lastClick = null
     }
