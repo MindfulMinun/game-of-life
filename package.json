@@ -12,6 +12,7 @@
     "private": true,
     "scripts": {
         "build": "rm -rf dist && npm run declaration:build && ./node_modules/.bin/babel src -d dist",
+        "serve": "./node_modules/http-server/bin/http-server",
         "declaration:build": "npx tsc",
         "test": "echo \"Error: no test specified\" && exit 1"
     },

@@ -1,5 +1,3 @@
-import padStart from 'pad-start'
-
 /**
  * JavaScript implementation of Conway's Game of Life
  * @author MindfulMinun
@@ -10,11 +8,33 @@ export class Grid {
      * @param {Grid} [grid] The previous grid
      */
     constructor(grid) {
+        if (typeof BigUint64Array !== 'undefined') {
+            /**
+             * A 64x64 grid of alive or dead cells
+             * @type {BigUint64Array | Uint32Array}
+             */
+            this.cells = new BigUint64Array(64)
+            /** Number of vertical cells */
+            this.height = 64
+            /** Number of horizontal cells */
+            this.width = 64
+            /**
+             * Checking if BigInts supported for progressive enhancement
+             * @private
+             */
+            this._usingBigInts = true
+        } else {
+            this.cells = new Uint32Array(32)
+            this.height = 32
+            this.width = 32
+            this._usingBigInts = false
+        }
+
         /**
-         * A 32x32 grid of alive or dead cells
-         * @type {Uint32Array}
+         * How should the state of the cells beyond the boundary react?
+         * @type {'dead' | 'alive'}
          */
-        this.cells = new Uint32Array(32)
+        this.beyondCellState = 'dead'
 
         /**
          * This grid state's current generation
@@ -25,6 +45,7 @@ export class Grid {
         if (grid) {
             this.cells = grid.cells.slice()
             this.currentGeneration = grid.currentGeneration + 1
+            this.beyondCellState = grid.beyondCellState
         }
         
 
@@ -63,8 +84,8 @@ export class Grid {
         // x O x   O is the cell that changed
         // x x x
 
-        if (x < 0 || 32 < x) return
-        if (y < 0 || 32 < y) return
+        if (x < 0 || this.width <= x) return
+        if (y < 0 || this.height <= y) return
 
         // Top row
         this.candidates.add(`${x - 1},${y - 1}`)
@@ -88,10 +109,19 @@ export class Grid {
         // Because (2 ** n) isn't bounded by JavaScript bitwise operations
         // and because the typed array inherently bounds our entries,
         // I'll be using 2 ** n operations so operations don't get bounded twice
-        if (state) {
-            this.cells[y] = (this.cells[y] | 2 ** x)
+
+        if (this._usingBigInts) {
+            if (state) {
+                this.cells[y] = (this.cells[y] | BigInt(2 ** x))
+            } else {
+                this.cells[y] = (this.cells[y] & BigInt(~(2 ** x)))
+            }
         } else {
-            this.cells[y] = (this.cells[y] & ~(2 ** x))
+            if (state) {
+                this.cells[y] = (this.cells[y] | 2 ** x)
+            } else {
+                this.cells[y] = (this.cells[y] & ~(2 ** x))
+            }
         }
     }
 
@@ -102,10 +132,14 @@ export class Grid {
      * @returns {boolean} The state of the cell, dead (false) or alive (true)
      */
     getState(x, y) {
-        // Assume cells past the border are always dead
-        if (x < 0 || 32 < x) return false
-        if (y < 0 || 32 < y) return false
-        return (this.cells[y] & (2 ** x)) !== 0
+        // Assume cells past the border are always true
+        if (x < 0 || this.width <= x) return this.beyondCellState === 'alive'
+        if (y < 0 || this.height <= y) return this.beyondCellState === 'alive'
+        // return (this.cells[y] & BigInt((2 ** x))) !== 0n
+        if (this._usingBigInts) {
+            return (this.cells[y] & 2n ** BigInt(x)) != 0
+        }
+        return (this.cells[y] & 2 ** x) != 0
     }
 
     /**
@@ -149,14 +183,14 @@ export class Grid {
         }
     }
 
-    toString() {
-        let out = ''
-        for (let i = 0; i < this.cells.length; i++) {
-            out += padStart(this.cells[i].toString(2), 32, ' ')
-                .replace(/0/g, ' ')
-                .replace(/1/g, '*')
-            out += '\n'
-        }
-        return out
-    }
+    // toString() {
+    //     let out = ''
+    //     for (let i = 0; i < this.cells.length; i++) {
+    //         out += this.cells[i].toString(2).padStart(this.width, ' ')
+    //             .replace(/0/g, ' ')
+    //             .replace(/1/g, '*')
+    //         out += '\n'
+    //     }
+    //     return out
+    // }
 }

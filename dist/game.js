@@ -5,10 +5,6 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.Grid = void 0;
 
-var _padStart = _interopRequireDefault(require("pad-start"));
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
-
 function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _unsupportedIterableToArray(arr, i) || _nonIterableRest(); }
 
 function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
@@ -47,11 +43,37 @@ var Grid = /*#__PURE__*/function () {
   function Grid(grid) {
     _classCallCheck(this, Grid);
 
+    if (typeof BigUint64Array !== 'undefined') {
+      /**
+       * A 64x64 grid of alive or dead cells
+       * @type {BigUint64Array | Uint32Array}
+       */
+      this.cells = new BigUint64Array(64);
+      /** Number of vertical cells */
+
+      this.height = 64;
+      /** Number of horizontal cells */
+
+      this.width = 64;
+      /**
+       * Checking if BigInts supported for progressive enhancement
+       * @private
+       */
+
+      this._usingBigInts = true;
+    } else {
+      this.cells = new Uint32Array(32);
+      this.height = 32;
+      this.width = 32;
+      this._usingBigInts = false;
+    }
     /**
-     * A 32x32 grid of alive or dead cells
-     * @type {Uint32Array}
+     * How should the state of the cells beyond the boundary react?
+     * @type {'dead' | 'alive'}
      */
-    this.cells = new Uint32Array(32);
+
+
+    this.beyondCellState = 'dead';
     /**
      * This grid state's current generation
      * @type {number}
@@ -62,6 +84,7 @@ var Grid = /*#__PURE__*/function () {
     if (grid) {
       this.cells = grid.cells.slice();
       this.currentGeneration = grid.currentGeneration + 1;
+      this.beyondCellState = grid.beyondCellState;
     }
     /**
      * Keeps track of cells that may have changed state.
@@ -113,8 +136,8 @@ var Grid = /*#__PURE__*/function () {
       // x x x
       // x O x   O is the cell that changed
       // x x x
-      if (x < 0 || 32 < x) return;
-      if (y < 0 || 32 < y) return; // Top row
+      if (x < 0 || this.width <= x) return;
+      if (y < 0 || this.height <= y) return; // Top row
 
       this.candidates.add("".concat(x - 1, ",").concat(y - 1));
       this.candidates.add("".concat(x + 0, ",").concat(y - 1));
@@ -132,10 +155,18 @@ var Grid = /*#__PURE__*/function () {
       // and because the typed array inherently bounds our entries,
       // I'll be using 2 ** n operations so operations don't get bounded twice
 
-      if (state) {
-        this.cells[y] = this.cells[y] | Math.pow(2, x);
+      if (this._usingBigInts) {
+        if (state) {
+          this.cells[y] = this.cells[y] | BigInt(Math.pow(2, x));
+        } else {
+          this.cells[y] = this.cells[y] & BigInt(~Math.pow(2, x));
+        }
       } else {
-        this.cells[y] = this.cells[y] & ~Math.pow(2, x);
+        if (state) {
+          this.cells[y] = this.cells[y] | Math.pow(2, x);
+        } else {
+          this.cells[y] = this.cells[y] & ~Math.pow(2, x);
+        }
       }
     }
     /**
@@ -148,10 +179,15 @@ var Grid = /*#__PURE__*/function () {
   }, {
     key: "getState",
     value: function getState(x, y) {
-      // Assume cells past the border are always dead
-      if (x < 0 || 32 < x) return false;
-      if (y < 0 || 32 < y) return false;
-      return (this.cells[y] & Math.pow(2, x)) !== 0;
+      // Assume cells past the border are always true
+      if (x < 0 || this.width <= x) return this.beyondCellState === 'alive';
+      if (y < 0 || this.height <= y) return this.beyondCellState === 'alive'; // return (this.cells[y] & BigInt((2 ** x))) !== 0n
+
+      if (this._usingBigInts) {
+        return (this.cells[y] & Math.pow(2n, BigInt(x))) != 0;
+      }
+
+      return (this.cells[y] & Math.pow(2, x)) != 0;
     }
     /**
      * Checks the 8 neighbors of the cell at (x, y), and determines whether the cell should be dead or alive in the next generation
@@ -182,19 +218,17 @@ var Grid = /*#__PURE__*/function () {
       } else {
         return aliveNeighbors.length === 3;
       }
-    }
-  }, {
-    key: "toString",
-    value: function toString() {
-      var out = '';
+    } // toString() {
+    //     let out = ''
+    //     for (let i = 0; i < this.cells.length; i++) {
+    //         out += this.cells[i].toString(2).padStart(this.width, ' ')
+    //             .replace(/0/g, ' ')
+    //             .replace(/1/g, '*')
+    //         out += '\n'
+    //     }
+    //     return out
+    // }
 
-      for (var i = 0; i < this.cells.length; i++) {
-        out += (0, _padStart["default"])(this.cells[i].toString(2), 32, ' ').replace(/0/g, ' ').replace(/1/g, '*');
-        out += '\n';
-      }
-
-      return out;
-    }
   }]);
 
   return Grid;

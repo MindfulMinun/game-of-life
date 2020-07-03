@@ -1,0 +1,60 @@
+<!doctype html>
+<!--
+    Made with :3c by MindfulMinun
+    localhost:1337
+-->
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+            *, *::before, *::after { box-sizing: border-box; }
+            html {
+                background-color: #1e1e1e;
+                color: white;
+            }
+            .container {
+                margin: 0 auto;
+                max-width: 640px;
+            }
+            canvas {
+                display: block;
+                width: 100%;
+                height: 100%;
+                border: 1px solid #424242;
+            }
+            .flex, .flex-label {
+                display: flex;
+            }
+            .flex > * {
+                flex: 1;
+                padding: .5em;
+            }
+            .flex-label > input {
+                margin-left: .5em;
+                flex: 1;
+            }
+            pre {
+                white-space: pre-wrap;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <p>Conway’s Game of Life, running right in your browser.</p>
+            <label class="flex-label">
+                <span>Target FPS:</span>
+                <input type="range" id="targetfps" min="1" max="90" value="15">
+            </label>
+            <div class="flex controls">
+                <button id="pp" disabled>Play</button>
+                <button id="step" disabled>Step one generation</button>
+                <button id="clear" disabled>Clear grid</button>
+                <button id="random" disabled>Fill grid randomly</button>
+            </div>
+            <canvas width="640" height="640"></canvas>
+            <pre id="info"></pre>
+        </div>
+        <script type="module" src="./src/main.js"></script>
+    </body>
+</html>

@@ -9,10 +9,24 @@ export class Grid {
      */
     constructor(grid?: Grid);
     /**
-     * A 32x32 grid of alive or dead cells
-     * @type {Uint32Array}
+     * A 64x64 grid of alive or dead cells
+     * @type {BigUint64Array | Uint32Array}
      */
-    cells: Uint32Array;
+    cells: any | Uint32Array;
+    /** Number of vertical cells */
+    height: number;
+    /** Number of horizontal cells */
+    width: number;
+    /**
+     * Checking if BigInts supported for progressive enhancement
+     * @private
+     */
+    private _usingBigInts;
+    /**
+     * How should the state of the cells beyond the boundary react?
+     * @type {'dead' | 'alive'}
+     */
+    beyondCellState: 'dead' | 'alive';
     /**
      * This grid state's current generation
      * @type {number}
@@ -49,5 +63,4 @@ export class Grid {
      * @returns {boolean} The next generation state of the cell, dead (false) or alive (true)
      */
     nextStateOf(x: number, y: number): boolean;
-    toString(): string;
 }
