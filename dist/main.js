@@ -116,18 +116,18 @@ function draw() {
   var rect = canv.getBoundingClientRect();
 
   if (!shouldUpdate && lastMouseEvent) {
-    var _x = Math.floor((lastMouseEvent.clientX - rect.x) / scaleFactor * dpr);
+    var _x = Math.floor((lastMouseEvent.clientX - rect.x) / rect.width * game.width);
 
-    var _y = Math.floor((lastMouseEvent.clientY - rect.y) / scaleFactor * dpr);
+    var _y = Math.floor((lastMouseEvent.clientY - rect.y) / rect.height * game.height);
 
     ctx.fillStyle = 'yellow';
     ctx.fillRect(_x, _y, 1, 1);
   }
 
   if (!shouldUpdate && lastClick) {
-    var _x2 = Math.floor((lastMouseEvent.clientX - rect.x) / scaleFactor * dpr);
+    var _x2 = Math.floor((lastMouseEvent.clientX - rect.x) / rect.width * game.width);
 
-    var _y2 = Math.floor((lastMouseEvent.clientY - rect.y) / scaleFactor * dpr);
+    var _y2 = Math.floor((lastMouseEvent.clientY - rect.y) / rect.height * game.height);
 
     game.setState(_x2, _y2, !game.getState(_x2, _y2));
     lastClick = null;
