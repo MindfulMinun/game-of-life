@@ -48,7 +48,6 @@ export class Grid {
             this.beyondCellState = grid.beyondCellState
         }
         
-
         /**
          * Keeps track of cells that may have changed state.
          * @type {Set<string>}
@@ -64,7 +63,7 @@ export class Grid {
         const next = new Grid(this)
         const actualCandidates = [...this.candidates.values()]
         for (let i = 0; i < actualCandidates.length; i++) {
-            const [x, y] = actualCandidates[i].split(',').map(x => +x)
+            const [x, y] = actualCandidates[i].split(',').map(x => parseInt(x, 10))
             if (this.getState(x, y) !== this.nextStateOf(x, y)) {
                 next.setState(x, y, this.nextStateOf(x, y))
             }
@@ -112,9 +111,9 @@ export class Grid {
 
         if (this._usingBigInts) {
             if (state) {
-                this.cells[y] = (this.cells[y] | BigInt(2 ** x))
+                this.cells[y] = this.cells[y] | (2n ** BigInt(x))
             } else {
-                this.cells[y] = (this.cells[y] & BigInt(~(2 ** x)))
+                this.cells[y] = this.cells[y] & ~(2n ** BigInt(x))
             }
         } else {
             if (state) {
@@ -132,14 +131,14 @@ export class Grid {
      * @returns {boolean} The state of the cell, dead (false) or alive (true)
      */
     getState(x, y) {
-        // Assume cells past the border are always true
+        // Cells beyond border
         if (x < 0 || this.width <= x) return this.beyondCellState === 'alive'
         if (y < 0 || this.height <= y) return this.beyondCellState === 'alive'
         // return (this.cells[y] & BigInt((2 ** x))) !== 0n
         if (this._usingBigInts) {
-            return (this.cells[y] & 2n ** BigInt(x)) != 0
+            return !!(this.cells[y] & (2n ** BigInt(x)))
         }
-        return (this.cells[y] & 2 ** x) != 0
+        return !!(this.cells[y] & (2 ** x))
     }
 
     /**
@@ -150,10 +149,9 @@ export class Grid {
      */
     nextStateOf(x, y) {
         // Cell life/death is dependent on number of neighbors
-        // Any live cell with two or three live neighbours survives.
-        // Any dead cell with three live neighbours becomes a live cell.
+        // Any live cell with two or three live neighbors survives.
+        // Any dead cell with three live neighbors becomes a live cell.
         // All other live cells die in the next generation. Similarly, all other dead cells stay dead
-
         const alive = this.getState(x, y)
 
         const aliveNeighbors = [
@@ -173,7 +171,6 @@ export class Grid {
             this.getState(x + 1, y + 1)
         ].filter(x => !!x)
 
-
         // If the cell is alive, then it stays alive if it has either 2 or 3 live neighbors
         // If the cell is dead, then it springs to life only in the case that it has 3 live neighbors
         if (alive) {
@@ -182,15 +179,4 @@ export class Grid {
             return aliveNeighbors.length === 3
         }
     }
-
-    // toString() {
-    //     let out = ''
-    //     for (let i = 0; i < this.cells.length; i++) {
-    //         out += this.cells[i].toString(2).padStart(this.width, ' ')
-    //             .replace(/0/g, ' ')
-    //             .replace(/1/g, '*')
-    //         out += '\n'
-    //     }
-    //     return out
-    // }
 }

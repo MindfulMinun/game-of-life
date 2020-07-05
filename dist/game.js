@@ -109,7 +109,7 @@ var Grid = /*#__PURE__*/function () {
 
       for (var i = 0; i < actualCandidates.length; i++) {
         var _actualCandidates$i$s = actualCandidates[i].split(',').map(function (x) {
-          return +x;
+          return parseInt(x, 10);
         }),
             _actualCandidates$i$s2 = _slicedToArray(_actualCandidates$i$s, 2),
             x = _actualCandidates$i$s2[0],
@@ -157,9 +157,9 @@ var Grid = /*#__PURE__*/function () {
 
       if (this._usingBigInts) {
         if (state) {
-          this.cells[y] = this.cells[y] | BigInt(Math.pow(2, x));
+          this.cells[y] = this.cells[y] | Math.pow(2n, BigInt(x));
         } else {
-          this.cells[y] = this.cells[y] & BigInt(~Math.pow(2, x));
+          this.cells[y] = this.cells[y] & ~Math.pow(2n, BigInt(x));
         }
       } else {
         if (state) {
@@ -179,15 +179,15 @@ var Grid = /*#__PURE__*/function () {
   }, {
     key: "getState",
     value: function getState(x, y) {
-      // Assume cells past the border are always true
+      // Cells beyond border
       if (x < 0 || this.width <= x) return this.beyondCellState === 'alive';
       if (y < 0 || this.height <= y) return this.beyondCellState === 'alive'; // return (this.cells[y] & BigInt((2 ** x))) !== 0n
 
       if (this._usingBigInts) {
-        return (this.cells[y] & Math.pow(2n, BigInt(x))) != 0;
+        return !!(this.cells[y] & Math.pow(2n, BigInt(x)));
       }
 
-      return (this.cells[y] & Math.pow(2, x)) != 0;
+      return !!(this.cells[y] & Math.pow(2, x));
     }
     /**
      * Checks the 8 neighbors of the cell at (x, y), and determines whether the cell should be dead or alive in the next generation
@@ -200,8 +200,8 @@ var Grid = /*#__PURE__*/function () {
     key: "nextStateOf",
     value: function nextStateOf(x, y) {
       // Cell life/death is dependent on number of neighbors
-      // Any live cell with two or three live neighbours survives.
-      // Any dead cell with three live neighbours becomes a live cell.
+      // Any live cell with two or three live neighbors survives.
+      // Any dead cell with three live neighbors becomes a live cell.
       // All other live cells die in the next generation. Similarly, all other dead cells stay dead
       var alive = this.getState(x, y);
       var aliveNeighbors = [// Top row
@@ -218,17 +218,7 @@ var Grid = /*#__PURE__*/function () {
       } else {
         return aliveNeighbors.length === 3;
       }
-    } // toString() {
-    //     let out = ''
-    //     for (let i = 0; i < this.cells.length; i++) {
-    //         out += this.cells[i].toString(2).padStart(this.width, ' ')
-    //             .replace(/0/g, ' ')
-    //             .replace(/1/g, '*')
-    //         out += '\n'
-    //     }
-    //     return out
-    // }
-
+    }
   }]);
 
   return Grid;
