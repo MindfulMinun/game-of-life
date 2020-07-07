@@ -2,6 +2,10 @@
 
 var _game = require("./game.js");
 
+var _GamepadController = _interopRequireDefault(require("./GamepadController.js"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
+
 function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _unsupportedIterableToArray(arr, i) || _nonIterableRest(); }
 
 function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
@@ -15,30 +19,6 @@ function _iterableToArrayLimit(arr, i) { if (typeof Symbol === "undefined" || !(
 function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
 
 var game = new _game.Grid();
-/**
- * Names of buttons on a standard gamepad
- * @typedef GamepadStandardButtonName
- * @type {
-    'A'|
-    'B'|
-    'Y'|
-    'X'|
-    'Lb'|
-    'Rb'|
-    'Lt'|
-    'Rt'|
-    'Start'|
-    'Select'|
-    'Home'|
-    'Lstick'|
-    'Rstick'|
-    'Up'|
-    'Down'|
-    'Left'|
-    'Right'
-}
- */
-
 /** Keeps track of time */
 
 var TimeController = {
@@ -136,99 +116,9 @@ var CursorController = {
 };
 /** Keeps track of the gamepad */
 
-var GamepadController = {
-  moveSlow: false,
-
-  /**
-   * @type {?Gamepad}
-   * @private
-   */
-  _lastGamepadState: null,
-
-  /**
-   * @type {?Gamepad}
-   * @private
-   */
-  _currentGamepadState: null,
-
-  /** 
-   * Maps names of gamepad buttons to indexes
-  * @type {GamepadStandardButtonName[]}
-   */
-  // @ts-ignore
-  nameMap: [// Face cluster
-  'B', 'A', 'Y', 'X', // Triggers & bumpers
-  'Lb', 'Rb', 'Lt', 'Rt', // -/+
-  'Select', 'Start', // Sticks
-  'Lstick', 'Rstick', // D-pad cluster
-  'Up', 'Down', 'Left', 'Right', // Center btn
-  'Home'],
-
-  get gamepad() {
-    return this._currentGamepadState;
-  },
-
-  /**
-   * Gets the button on the current controller, or the provided one.
-   * @param {GamepadStandardButtonName|number} button 
-   * @param {Gamepad} [controller] 
-   */
-  getButton: function getButton(button, controller) {
-    controller = controller || this._currentGamepadState;
-    var index = typeof button === 'number' ? button : this.nameMap.indexOf(button);
-    if (!controller) return {
-      pressed: false,
-      touched: false,
-      value: 0
-    };
-    if (index < 0) throw Error("Invalid button name");
-    return controller.buttons[index];
-  },
-
-  /**
-   * Gets the axes for the current controller, or the provided one
-   * @param {Gamepad} [controller] 
-   */
-  getAxes: function getAxes(controller) {
-    controller = controller || this._currentGamepadState;
-    if (!controller) return [0, 0, 0, 0];
-    return controller.axes.slice(0, 4);
-  },
-
-  /**
-   * Returns true if the button is pressed now, but wasn't previously.
-   * @param {GamepadStandardButtonName|number} button 
-   */
-  didClick: function didClick(button) {
-    if (!this._lastGamepadState) return false;
-    var prev = this.getButton(button, this._lastGamepadState).pressed;
-    var now = this.getButton(button).pressed; // Pressed now, but not previously
-
-    return now && !prev;
-  },
-
-  /**
-   * Initializes the controller state for this frame
-   */
-  newFrame: function newFrame() {
-    var gamepad = Array.from(navigator.getGamepads()).find(function (g) {
-      return g && g.mapping === 'standard';
-    });
-    this._lastGamepadState = this._currentGamepadState;
-    this._currentGamepadState = gamepad; // return
-
-    var out = '';
-
-    for (var i = 0; i < GamepadController.nameMap.length; i++) {
-      var name = GamepadController.nameMap[i]; // console.log(i)
-
-      var btn = GamepadController.getButton(i);
-      if (btn.pressed) out += name + ' ';
-    }
-
-    out && console.log(out);
-  }
-};
+var GC = new _GamepadController["default"]({
+  log: true
+});
 var canv = document.querySelector('canvas');
 var info = document.getElementById('info');
 /** @type {HTMLInputElement} */
@@ -261,7 +151,8 @@ var dpr = window.devicePixelRatio || 1; // Scale factor = Pixel density * width 
 
 var scaleFactor = dpr * (640 / game.width);
 var shouldUpdate = false;
-var lastCursorCellState = false; // Get rid fuzziness on hi-res displays
+var lastCursorCellState = false;
+var controllerMoveSlow = false; // Get rid fuzziness on hi-res displays
 
 canv.width = game.width * scaleFactor;
 canv.height = game.height * scaleFactor;
@@ -342,18 +233,20 @@ function updateDOM() {
 
 
 function handleGamepad() {
-  GamepadController.newFrame(); // Move axes
+  GC.initFrame(); // console.log(controllerController.state)
 
-  var _GamepadController$ge = GamepadController.getAxes().map(Math.round),
-      _GamepadController$ge2 = _slicedToArray(_GamepadController$ge, 2),
-      dx = _GamepadController$ge2[0],
-      dy = _GamepadController$ge2[1];
+  if (!GC.state) return; // Move axes
 
-  if (GamepadController.moveSlow) {
-    var _GamepadController$ge3 = GamepadController.getAxes(GamepadController._lastGamepadState).map(Math.round),
-        _GamepadController$ge4 = _slicedToArray(_GamepadController$ge3, 2),
-        ldx = _GamepadController$ge4[0],
-        ldy = _GamepadController$ge4[1];
+  var _GC$getAxes$map = GC.getAxes().map(Math.round),
+      _GC$getAxes$map2 = _slicedToArray(_GC$getAxes$map, 2),
+      dx = _GC$getAxes$map2[0],
+      dy = _GC$getAxes$map2[1];
+
+  if (controllerMoveSlow) {
+    var _GC$getAxes$map3 = GC.getAxes(GC.previousState).map(Math.round),
+        _GC$getAxes$map4 = _slicedToArray(_GC$getAxes$map3, 2),
+        ldx = _GC$getAxes$map4[0],
+        ldy = _GC$getAxes$map4[1];
 
     if (dx !== ldx) {
       CursorController.move(dx, 0);
@@ -367,67 +260,68 @@ function handleGamepad() {
   } // Check for clicks
 
 
-  if (GamepadController.didClick('A') || GamepadController.didClick('B')) {
+  if (GC.didPress('A') || GC.didPress('B')) {
     CursorController.registerClick();
   }
 
-  if (GamepadController.didClick('Y')) {
+  if (GC.didPress('Y')) {
     shouldUpdate = !shouldUpdate;
   }
 
-  if (GamepadController.didClick('X')) {
+  if (GC.didPress('X')) {
     game = game.nextFrame();
   } // GamepadController.getButton()
 
 
-  if (GamepadController.didClick('Lstick')) {
-    GamepadController.moveSlow = !GamepadController.moveSlow;
+  if (GC.didPress('Lstick')) {
+    controllerMoveSlow = !controllerMoveSlow;
   }
 
-  if (GamepadController.getButton('Rb').pressed || GamepadController.getButton('Rt').pressed) {
+  if (GC.getButton('Rb').pressed || GC.getButton('Rt').pressed) {
     targetFPS.valueAsNumber += 1;
   }
 
-  if (GamepadController.getButton('Lb').pressed || GamepadController.getButton('Lt').pressed) {
+  if (GC.getButton('Lb').pressed || GC.getButton('Lt').pressed) {
     targetFPS.valueAsNumber -= 1;
   } // D-Pad
 
 
-  if (GamepadController.didClick('Up')) {
+  if (GC.didPress('Up')) {
     CursorController.move(0, -1);
   }
 
-  if (GamepadController.didClick('Down')) {
+  if (GC.didPress('Down')) {
     CursorController.move(0, 1);
   }
 
-  if (GamepadController.didClick('Left')) {
+  if (GC.didPress('Left')) {
     CursorController.move(-1, 0);
   }
 
-  if (GamepadController.didClick('Right')) {
+  if (GC.didPress('Right')) {
     CursorController.move(1, 0);
   } // Do vibration
 
 
-  var gp = GamepadController.gamepad || {}; // If there's no vibration motor then just continue
+  var gp = GC.state; // If there's no vibration motor then just continue
+  // @ts-expect-error
 
-  if (!gp.vibrationActuator) return;
-  if (!gp.vibrationActuator && gp.vibrationActuator.playEffect) return; // If we haven't moved and the game has changed, play a small vibration
+  if (!gp || !gp.vibrationActuator) return; // @ts-expect-error
+
+  if (!gp.vibrationActuator && gp.vibrationActuator.playEffect) return; // If the state has changed, play a short vibration
 
   var _CursorController$coo3 = _slicedToArray(CursorController.coords, 2),
       x = _CursorController$coo3[0],
-      y = _CursorController$coo3[1]; // if (dx === dy && dy === 0) {
-
+      y = _CursorController$coo3[1];
 
   if (lastCursorCellState !== game.getState(x, y)) {
+    // @ts-expect-error
     gp.vibrationActuator.playEffect(gp.vibrationActuator.type, {
       strongMagnitude: .4,
       weakMagnitude: .4,
       duration: 15
     });
-  } // }
-
+  }
 
   lastCursorCellState = game.getState(x, y);
 } // Event listeners
@@ -543,3 +437,6 @@ random.disabled = false // Draw some cells on the grid so the user doesn't just 
     }
   }
 })([29, 16, 3, 13, 21]);
+
+document.documentElement.classList.remove('no-js');
+document.documentElement.classList.add('js');

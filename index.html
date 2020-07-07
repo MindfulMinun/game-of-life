@@ -3,11 +3,12 @@
     Made with :3c by MindfulMinun
     localhost:1337
 -->
-<html>
+<html class="no-js">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+        <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@0,200&display=swap" rel="stylesheet">
         <style>
             *, *::before, *::after { box-sizing: border-box; }
             html {
@@ -16,16 +17,31 @@
                 font-family: Inter, Helvetica, sans-serif;
                 font-size: 16px;
             }
+            .container {
+                margin: 0 auto;
+                max-width: 640px;
+            }
             .inter {
                 font-family: Inter, Helvetica, sans-serif;
             }
             pre .inter {
                 font-size: 75%;
             }
-            .container {
-                margin: 0 auto;
-                max-width: 640px;
+            .no-js-show {
+                display: block;
+                margin: 1em 0;
+                padding: 0 1em;
+                border: 2px solid red;
             }
+            .js .no-js-show {
+                display: none;
+            }
+            h1 {
+                text-align: center;
+                font-size: 24px;
+                margin-top: 1em;
+            }
+            [href] { color: #448aff; }
             canvas {
                 display: block;
                 width: 100%;
@@ -59,7 +75,11 @@
                 bottom: .2em;
             }
             pre {
-                white-space: pre-wrap;
+                font-family: 'Roboto Mono', monospace, monospace;
+                font-weight: 300;
+                white-space: pre;
+                width: 100%;
+                overflow-x: scroll;
             }
 
             .control-scheme {
@@ -75,16 +95,22 @@
     </head>
     <body>
         <div class="container">
-            <p>Conway’s Game of Life, running right in your browser.</p>
+            <h1>Conway’s Game of Life</h1>
+            <p><a href="https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life" rel="noopener">What’s this?</a></p>
+            <div class="no-js-show">
+                <p>If you can see me for more than a few seconds, you're using a browser that doesn't support some of the latest&trade; JavaScript&copy; features. (or maybe your internet's pretty slow.)</p>
+                <p>Please come back on a different browser, perhaps Chrome or Firefox.</p>
+            </div>
             <label class="flex-label">
                 <span>Target FPS:</span>
                 <input type="range" id="targetfps" min="1" max="90" value="15">
             </label>
+            <div class="noscript"></div>
             <div class="flex controls">
-                <button id="flex__grow pp" disabled>Play</button>
-                <button id="flex__grow step" disabled>Step one generation</button>
-                <button id="flex__grow clear" disabled>Clear grid</button>
-                <button id="flex__grow random" disabled>Fill grid randomly</button>
+                <button id="pp" class="flex__grow" disabled>Play</button>
+                <button id="step" class="flex__grow" disabled>Step one generation</button>
+                <button id="clear" class="flex__grow" disabled>Clear grid</button>
+                <button id="random" class="flex__grow" disabled>Fill grid randomly</button>
             </div>
             <canvas width="640" height="640" tabindex="0"></canvas>
             <pre id="info"></pre>
@@ -96,8 +122,6 @@ q <span class="controls-movement">w</span> e r t y u i o p   <span class="contro
 <span class="controls-movement">a s d</span> f g h <span class="controls-a">j</span> <span class="controls-y">k</span> <span class="controls-x">l</span> ; <span class="controls-a">↩</span> <span class="controls-y">Play/pause</span>
   <span class="controls-a">z</span> <span class="controls-y">x</span> <span class="controls-x">c</span> v b n m       <span class="controls-x">Step one generation</span>
 </pre>
-
-
 
             <p>Gamepad controls:</p>
 

@@ -1,30 +1,7 @@
 //@ts-check
 import { Grid } from './game.js'
+import GamepadController from './GamepadController.js'
 let game = new Grid()
-
-/**
- * Names of buttons on a standard gamepad
- * @typedef GamepadStandardButtonName
- * @type {
-    'A'|
-    'B'|
-    'Y'|
-    'X'|
-    'Lb'|
-    'Rb'|
-    'Lt'|
-    'Rt'|
-    'Start'|
-    'Select'|
-    'Home'|
-    'Lstick'|
-    'Rstick'|
-    'Up'|
-    'Down'|
-    'Left'|
-    'Right'
-}
- */
 
 
 /** Keeps track of time */
@@ -104,97 +81,7 @@ const CursorController = {
 }
 
 /** Keeps track of the gamepad */
-const GamepadController = {
-    moveSlow: false,
-    /**
-     * @type {?Gamepad}
-     * @private
-     */
-    _lastGamepadState: null,
-    /**
-     * @type {?Gamepad}
-     * @private
-     */
-    _currentGamepadState: null,
-    /** 
-     * Maps names of gamepad buttons to indexes
-    * @type {GamepadStandardButtonName[]}
-     */
-    // @ts-ignore
-    nameMap: [
-        // Face cluster
-        'B', 'A', 'Y', 'X',
-        // Triggers & bumpers
-        'Lb', 'Rb', 'Lt', 'Rt',
-        // -/+
-        'Select', 'Start',
-        // Sticks
-        'Lstick', 'Rstick',
-        // D-pad cluster
-        'Up', 'Down', 'Left', 'Right',
-        // Center btn
-        'Home'
-    ],
-    get gamepad() {
-        return this._currentGamepadState
-    },
-    /**
-     * Gets the button on the current controller, or the provided one.
-     * @param {GamepadStandardButtonName|number} button 
-     * @param {Gamepad} [controller] 
-     */
-    getButton(button, controller) {
-        controller = controller || this._currentGamepadState
-        const index = typeof button === 'number' ?
-            button : this.nameMap.indexOf(button)
-        if (!controller) return {
-            pressed: false,
-            touched: false,
-            value: 0
-        }
-        if (index < 0) throw Error("Invalid button name")
-        return controller.buttons[index]
-    },
-    /**
-     * Gets the axes for the current controller, or the provided one
-     * @param {Gamepad} [controller] 
-     */
-    getAxes(controller) {
-        controller = controller || this._currentGamepadState
-        if (!controller) return [0, 0, 0, 0]
-        return controller.axes.slice(0, 4)
-    },
-    /**
-     * Returns true if the button is pressed now, but wasn't previously.
-     * @param {GamepadStandardButtonName|number} button 
-     */
-    didClick(button) {
-        if (!this._lastGamepadState) return false
-        const prev = this.getButton(button, this._lastGamepadState).pressed
-        const now = this.getButton(button).pressed
-
-        // Pressed now, but not previously
-        return now && !prev
-    },
-    /**
-     * Initializes the controller state for this frame
-     */
-    newFrame() {
-        const gamepad = Array.from(navigator.getGamepads()).find(g => g && g.mapping === 'standard')
-        this._lastGamepadState = this._currentGamepadState
-        this._currentGamepadState = gamepad
-
-        // return
-        let out = ''
-        for (let i = 0; i < GamepadController.nameMap.length; i++) {
-            const name = GamepadController.nameMap[i]
-            // console.log(i)
-            const btn = GamepadController.getButton(i)
-            if (btn.pressed) out += name + ' '
-        }
-        out && console.log(out)
-    }
-}
+const GC = new GamepadController({ log: true })
 
 const canv = document.querySelector('canvas')
 const info = document.getElementById('info')
@@ -217,6 +104,7 @@ const scaleFactor = dpr * (640 / game.width)
 
 let shouldUpdate = false
 let lastCursorCellState = false
+let controllerMoveSlow = false
 
 // Get rid fuzziness on hi-res displays
 canv.width = game.width * scaleFactor
@@ -287,12 +175,15 @@ function updateDOM() {
 
 /** Handles gamepad inputs */
 function handleGamepad() {
-    GamepadController.newFrame()
+    GC.initFrame()
+    // console.log(controllerController.state)
+
+    if (!GC.state) return
 
     // Move axes
-    const [dx, dy] = GamepadController.getAxes().map(Math.round)
-    if (GamepadController.moveSlow) {
-        const [ldx, ldy] = GamepadController.getAxes(GamepadController._lastGamepadState).map(Math.round)
+    const [dx, dy] = GC.getAxes().map(Math.round)
+    if (controllerMoveSlow) {
+        const [ldx, ldy] = GC.getAxes(GC.previousState).map(Math.round)
         if (dx !== ldx) {
             CursorController.move(dx, 0)
         }
@@ -304,49 +195,50 @@ function handleGamepad() {
     }
 
     // Check for clicks
-    if (GamepadController.didClick('A') || GamepadController.didClick('B')) {
+    if (GC.didPress('A') || GC.didPress('B')) {
         CursorController.registerClick()
     }
-    if (GamepadController.didClick('Y')) {
+    if (GC.didPress('Y')) {
         shouldUpdate = !shouldUpdate
     }
-    if (GamepadController.didClick('X')) {
+    if (GC.didPress('X')) {
         game = game.nextFrame()
     }
     // GamepadController.getButton()
-    if (GamepadController.didClick('Lstick')) {
-        GamepadController.moveSlow = !GamepadController.moveSlow
+    if (GC.didPress('Lstick')) {
+        controllerMoveSlow = !controllerMoveSlow
     }
-    if (GamepadController.getButton('Rb').pressed || GamepadController.getButton('Rt').pressed) {
+    if (GC.getButton('Rb').pressed || GC.getButton('Rt').pressed) {
         targetFPS.valueAsNumber += 1
     }
-    if (GamepadController.getButton('Lb').pressed || GamepadController.getButton('Lt').pressed) {
+    if (GC.getButton('Lb').pressed || GC.getButton('Lt').pressed) {
         targetFPS.valueAsNumber -= 1
     }
 
     // D-Pad
-    if (GamepadController.didClick('Up')) { CursorController.move(0, -1); }
-    if (GamepadController.didClick('Down')) { CursorController.move(0, 1); }
-    if (GamepadController.didClick('Left')) { CursorController.move(-1, 0); }
-    if (GamepadController.didClick('Right')) { CursorController.move(1, 0); }
+    if (GC.didPress('Up')) { CursorController.move(0, -1); }
+    if (GC.didPress('Down')) { CursorController.move(0, 1); }
+    if (GC.didPress('Left')) { CursorController.move(-1, 0); }
+    if (GC.didPress('Right')) { CursorController.move(1, 0); }
 
     // Do vibration
-    const gp = GamepadController.gamepad || {}
+    const gp = GC.state
     // If there's no vibration motor then just continue
-    if (!gp.vibrationActuator) return
+    // @ts-expect-error
+    if (!gp || !gp.vibrationActuator) return
+    // @ts-expect-error
     if (!gp.vibrationActuator && gp.vibrationActuator.playEffect) return
-
-    // If we haven't moved and the game has changed, play a small vibration
+    
+    // If the state has changed, play a short vibration
     const [x, y] = CursorController.coords
-    // if (dx === dy && dy === 0) {
-        if (lastCursorCellState !== game.getState(x, y)) {
-            gp.vibrationActuator.playEffect(gp.vibrationActuator.type, {
-                strongMagnitude: .4,
-                weakMagnitude: .4,
-                duration: 15
-            })
-        }
-    // }
+    if (lastCursorCellState !== game.getState(x, y)) {
+        // @ts-expect-error
+        gp.vibrationActuator.playEffect(gp.vibrationActuator.type, {
+            strongMagnitude: .4,
+            weakMagnitude: .4,
+            duration: 15
+        })
+    }
     lastCursorCellState = game.getState(x, y)
 }
 
@@ -457,3 +349,6 @@ random.disabled = false
     0b01101,
     0b10101
 ])
+
+document.documentElement.classList.remove('no-js')
+document.documentElement.classList.add('js')
